@@ -5,41 +5,38 @@ const MagicString = require('magic-string');
 const code = fs.readFileSync('../source.js').toString();
 
 const ast = acorn.parse(code, {
+    locations: true,
+    ranges:true,
     sourceType: "module",
     ecmaVersion: 7
 })
 
 // console.log(ast)
 
-// 第一次遍历: 查找变量声明
-const declarations = {}
-ast.body
-    .filter(v => v.type === 'VariableDeclaration')
-    .map(v => {
-        // console.log("检测声明", v.declarations[0].id.name)
-        declarations[v.declarations[0].id.name] = v;
-    })
+const walk = require('../lib/walk');
 
-// console.log(declarations);
+// 作用域缩进
+let indent = 0;
 
-// 第二次遍历: 处理非声明代码部分 (例:将声明放在调用前)
-const statements = [];
-ast.body
-    .filter(v => v.type !== 'VariableDeclaration')
-    .map(v => {
-        // console.log("Expression原变量",v.expression.callee.name)
-        statements.push(declarations[v.expression.callee.name]);
-        statements.push(v)
-    })
+// 开始对语法树进行分析
+walk(ast, {
+    enter(node) {
+        // 变量声明
+        if(node.type === 'VariableDeclaration'){
+            console.log('%s Var:', (' ').repeat(indent * 4), node.declarations[0].id.name);
+        }
 
-// console.log(statements);
-
-// TreeShaking 生成最后代码
-const m = new MagicString(code);
-
-console.log("=================================")
-statements.map(node => {
-    // 通过AST分析后的语句起始生成代码;
-    console.log(m.snip(node.start, node.end).toString());
+        // 函数声明
+        if(node.type === 'FunctionDeclaration'){
+            console.log('%s Fun:', (' ').repeat(indent * 4), node.id.name);
+            // 代表进入函数, 新增一层作用域
+            indent ++;
+        }
+    },
+    leave(node) {
+        if(node.type === 'FunctionDeclaration'){
+            // 函数作用域结束, 减少一层作用域
+            indent --;
+        }
+    }
 })
-console.log("=================================")
