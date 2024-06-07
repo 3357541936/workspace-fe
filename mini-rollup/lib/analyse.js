@@ -27,6 +27,7 @@ function analyse(ast, magicString, module) {
         Object.defineProperties(statement, {
             _defines: {value: {}},
             _dependsOn: {value: {}},
+            _included: {value: false, writable: true},
         })
 
         walk(statement, {
@@ -61,7 +62,7 @@ function analyse(ast, magicString, module) {
                 }
             },
             leave(node) {
-                if (node._scope){
+                if (node._scope) {
                     scope = scope.parent;
                 }
             }
@@ -70,9 +71,9 @@ function analyse(ast, magicString, module) {
     ast._scope = scope;
 
     ast.body.forEach((statement) => {
-        walk(statement,{
-            enter(node){
-                if(node.type === 'Identifier'){
+        walk(statement, {
+            enter(node) {
+                if (node.type === 'Identifier') {
                     statement._dependsOn[node.name] = true
                 }
             }

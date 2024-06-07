@@ -34,4 +34,20 @@ describe('module', () => {
             expect(module.definitions).toEqual({a: module.ast.body[0]});
         });
     })
+    describe('ExpandAllStatement', () => {
+        it('basic', () => {
+            const code = `
+            const a = () => 1;
+            const b = () => 2;
+            a();
+            `
+            const module = new Module({code});
+            const statement = module.expandAllStatement();
+            expect(statement.length).toBe(2);
+
+            expect(module.code.snip(statement[0].start, statement[0].end).toString()).toEqual('const a = () => 1;');
+            expect(module.code.snip(statement[1].start, statement[1].end).toString()).toEqual('a();');
+        });
+
+    });
 })
