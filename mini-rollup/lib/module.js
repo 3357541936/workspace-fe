@@ -5,8 +5,10 @@ const analyse = require('./analyse');
 const SYSTEM_VARS = ['console', 'log'];
 
 class Module {
-    constructor({code}) {
+    constructor({code,path, bundle}) {
         this.code = new MagicString(code);
+        this.path = path;
+        this.bundle = bundle;
         this.ast = acorn.parse(code, {
             ecmaVersion: 7,
             sourceType: 'module',
@@ -86,6 +88,11 @@ class Module {
     define(name) {
         // import 模块外的内容
         if (has(this.imports, name)) {
+            const importDeclaration = this.imports[name];
+            const source = importDeclaration.source;
+            const module = this.bundle.fetchModule(source, this.path);
+            const exportData = module.exports[importDeclaration.name];
+            return module.define(exportData.localName);
 
         }
         // 自身模块的内容
@@ -111,8 +118,8 @@ class Module {
 
 
 function has(obj, prop) {
-    return Object.prototype.hasOwnProperty(obj, prop)
-    obj.hasOwnProperty(prop);
+    return obj.hasOwnProperty(prop)
+
 }
 
 module.exports = Module;
